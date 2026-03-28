@@ -45,6 +45,7 @@ class IMessageChannel(BaseChannel):
         db_path: str,
         poll_sec: float,
         bot_prefix: str,
+        require_mention: bool = False,
         media_dir: str = "",
         max_decoded_size: int = 10 * 1024 * 1024,  # 10MB default
         on_reply_sent: OnReplySent = None,
@@ -63,6 +64,7 @@ class IMessageChannel(BaseChannel):
         self.db_path = os.path.expanduser(db_path)
         self.poll_sec = poll_sec
         self.bot_prefix = bot_prefix
+        self.require_mention = require_mention
 
         # Create media directory for downloaded files
         self._media_dir = (
@@ -92,6 +94,7 @@ class IMessageChannel(BaseChannel):
             ),
             poll_sec=float(os.getenv("IMESSAGE_POLL_SEC", "1.0")),
             bot_prefix=os.getenv("IMESSAGE_BOT_PREFIX", ""),
+            require_mention=os.getenv("IMESSAGE_REQUIRE_MENTION", "0") == "1",
             media_dir=os.getenv("IMESSAGE_MEDIA_DIR", ""),
             max_decoded_size=int(
                 os.getenv("IMESSAGE_MAX_DECODED_SIZE", "10485760"),
@@ -115,6 +118,7 @@ class IMessageChannel(BaseChannel):
             db_path=config.db_path or "~/Library/Messages/chat.db",
             poll_sec=config.poll_sec,
             bot_prefix=config.bot_prefix or "",
+            require_mention=config.require_mention if hasattr(config, 'require_mention') else False,
             media_dir=config.media_dir if config.media_dir else "",
             max_decoded_size=config.max_decoded_size,
             on_reply_sent=on_reply_sent,
