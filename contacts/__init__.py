@@ -3,12 +3,14 @@
 
 from copaw.agents.tools.contacts.tools import (
     create_contact,
+    edit_contact,
     search_contacts,
     list_contacts,
 )
 
 __all__ = [
     "create_contact",
+    "edit_contact",
     "search_contacts",
     "list_contacts",
 ]
