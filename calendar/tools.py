@@ -81,6 +81,7 @@ async def create_event(
     description: str | None = None,
     location: str | None = None,
     attendees: str | None = None,
+    calendar_id: str = "primary",
 ) -> ToolResponse:
     """Create a Google Calendar event.
 
@@ -91,6 +92,7 @@ async def create_event(
         description: Optional description for the event.
         location: Optional location for the event.
         attendees: Optional comma-separated list of email addresses.
+        calendar_id: Calendar ID to create event on. Defaults to "primary".
     """
     service = _get_calendar_service()
     if service is None:
@@ -113,7 +115,7 @@ async def create_event(
         event["attendees"] = attendee_list
 
     try:
-        event_result = service.events().insert(calendarId="primary", body=event).execute()
+        event_result = service.events().insert(calendarId=calendar_id, body=event).execute()
         return ToolResponse(
             content=[TextBlock(type="text", text=f"Event created: {event_result.get('htmlLink')}")],
         )
@@ -131,6 +133,7 @@ async def edit_event(
     end_time: str | None = None,
     description: str | None = None,
     location: str | None = None,
+    calendar_id: str = "primary",
 ) -> ToolResponse:
     """Modify an existing Google Calendar event.
 
@@ -144,6 +147,7 @@ async def edit_event(
         end_time: New end time in RFC3339 format.
         description: New description for the event.
         location: New location for the event.
+        calendar_id: Calendar ID containing the event. Defaults to "primary".
     """
     service = _get_calendar_service()
     if service is None:
@@ -171,7 +175,7 @@ async def edit_event(
 
     try:
         event_result = service.events().patch(
-            calendarId="primary",
+            calendarId=calendar_id,
             eventId=event_id,
             body=event
         ).execute()
@@ -185,11 +189,12 @@ async def edit_event(
         )
 
 
-async def delete_event(event_id: str) -> ToolResponse:
+async def delete_event(event_id: str, calendar_id: str = "primary") -> ToolResponse:
     """Delete a Google Calendar event.
 
     Args:
         event_id: The ID of the event to delete.
+        calendar_id: Calendar ID containing the event. Defaults to "primary".
     """
     service = _get_calendar_service()
     if service is None:
@@ -198,7 +203,7 @@ async def delete_event(event_id: str) -> ToolResponse:
         )
 
     try:
-        service.events().delete(calendarId="primary", eventId=event_id).execute()
+        service.events().delete(calendarId=calendar_id, eventId=event_id).execute()
         return ToolResponse(
             content=[TextBlock(type="text", text=f"Event {event_id} deleted successfully.")],
         )
@@ -246,11 +251,12 @@ async def list_calendars() -> ToolResponse:
         )
 
 
-async def quick_add(text: str) -> ToolResponse:
+async def quick_add(text: str, calendar_id: str = "primary") -> ToolResponse:
     """Quick add an event using natural language.
 
     Args:
         text: Natural language text for the event (e.g., "Dinner with John tomorrow at 7pm").
+        calendar_id: Calendar ID to add event to. Defaults to "primary".
     """
     service = _get_calendar_service()
     if service is None:
@@ -260,7 +266,7 @@ async def quick_add(text: str) -> ToolResponse:
 
     try:
         event_result = service.events().quickAdd(
-            calendarId="primary",
+            calendarId=calendar_id,
             text=text,
         ).execute()
 

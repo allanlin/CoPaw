@@ -22,13 +22,13 @@ Manage your Google Calendar with the following capabilities:
 - `get_event` - Get details of a specific event (no approval required)
   - Parameters: event_id
 - `quick_add` - Quick add event using natural language (requires approval)
-  - Parameters: text (e.g., "Dinner with John tomorrow at 7pm")
+  - Parameters: text (e.g., "Dinner with John tomorrow at 7pm"), calendar_id (defaults to "primary")
 - `create_event` - Create new calendar event (requires approval)
-  - Parameters: summary, start_time, end_time, description, location, attendees
+  - Parameters: summary, start_time, end_time, description, location, attendees, calendar_id (defaults to "primary")
 - `edit_event` - Modify existing event (requires approval)
-  - Parameters: event_id, summary, start_time, end_time, description, location
+  - Parameters: event_id, summary, start_time, end_time, description, location, calendar_id (defaults to "primary")
 - `delete_event` - Remove event (requires approval)
-  - Parameters: event_id
+  - Parameters: event_id, calendar_id (defaults to "primary")
 
 ## Calendar IDs
 
