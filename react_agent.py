@@ -75,6 +75,7 @@ from .tools.media import (
 )
 from .tools.contacts import (
     create_contact,
+    edit_contact,
     search_contacts,
     list_contacts,
 )
@@ -276,6 +277,7 @@ class CoPawAgent(ToolGuardMixin, ReActAgent):
             "voice_design": voice_design,
             # Contacts tools
             "create_contact": create_contact,
+            "edit_contact": edit_contact,
             "search_contacts": search_contacts,
             "list_contacts": list_contacts,
         }

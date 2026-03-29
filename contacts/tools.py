@@ -58,6 +58,86 @@ async def create_contact(
         )
 
 
+async def edit_contact(
+    contact_id: str,
+    name: str | None = None,
+    email: str | None = None,
+    phone: str | None = None,
+    company: str | None = None,
+    notes: str | None = None,
+) -> ToolResponse:
+    """Edit an existing Google contact.
+
+    Args:
+        contact_id: The resourceName of the contact (e.g., "people/c1234567890").
+            This is returned from search_contacts or list_contacts.
+        name: New full name for the contact.
+        email: New email address.
+        phone: New phone number.
+        company: New company/organization.
+        notes: New notes.
+    """
+    service = _get_people_service()
+    if service is None:
+        return ToolResponse(
+            content=[TextBlock(type="text", text="Not authenticated for Google Contacts. Please re-authenticate with contacts scope.")],
+        )
+
+    # Build update body - at least one field must be provided
+    if not any([name, email, phone, company, notes]):
+        return ToolResponse(
+            content=[TextBlock(type="text", text="No fields to update. Please provide at least one field to update.")],
+        )
+
+    # Build contact body with only provided fields
+    contact_body = {}
+    update_fields = []
+
+    if name:
+        contact_body["names"] = [{"givenName": name}]
+        update_fields.append("names")
+
+    if email:
+        contact_body["emailAddresses"] = [{"value": email}]
+        update_fields.append("emailAddresses")
+
+    if phone:
+        contact_body["phoneNumbers"] = [{"value": phone}]
+        update_fields.append("phoneNumbers")
+
+    if company:
+        contact_body["organizations"] = [{"name": company}]
+        update_fields.append("organizations")
+
+    if notes:
+        contact_body["biographies"] = [{"value": notes, "contentType": "TEXT_PLAIN"}]
+        update_fields.append("biographies")
+
+    try:
+        result = service.people().updateContact(
+            resourceName=contact_id,
+            body=contact_body,
+            updatePersonFields=",".join(update_fields),
+        ).execute()
+        resource_name = result.get("resourceName", "")
+        return ToolResponse(
+            content=[TextBlock(type="text", text=f"Contact updated: {resource_name}")],
+        )
+    except Exception as e:
+        error_msg = str(e)
+        if "403" in error_msg or "Forbidden" in error_msg:
+            return ToolResponse(
+                content=[TextBlock(type="text", text=f"Access denied: You don't have permission to edit this contact. The contact may be read-only or in a system group.")],
+            )
+        elif "404" in error_msg or "Not Found" in error_msg:
+            return ToolResponse(
+                content=[TextBlock(type="text", text=f"Contact not found: No contact with ID '{contact_id}' exists.")],
+            )
+        return ToolResponse(
+            content=[TextBlock(type="text", text=f"Error editing contact: {error_msg}")],
+        )
+
+
 async def search_contacts(query: str, max_results: int = 10) -> ToolResponse:
     """Search for contacts by name or email.
 
