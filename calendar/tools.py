@@ -82,6 +82,8 @@ async def create_event(
     location: str | None = None,
     attendees: str | None = None,
     calendar_id: str = "primary",
+    reminder_minutes: int | None = 30,
+    reminder_method: str = "popup",
 ) -> ToolResponse:
     """Create a Google Calendar event.
 
@@ -93,6 +95,8 @@ async def create_event(
         location: Optional location for the event.
         attendees: Optional comma-separated list of email addresses.
         calendar_id: Calendar ID to create event on. Defaults to "primary".
+        reminder_minutes: Minutes before event to send reminder (None to disable, default 30).
+        reminder_method: Reminder type - "popup" or "email" (default "popup").
     """
     service = _get_calendar_service()
     if service is None:
@@ -114,6 +118,15 @@ async def create_event(
         attendee_list = [{"email": email.strip()} for email in attendees.split(",")]
         event["attendees"] = attendee_list
 
+    # Add reminder if specified
+    if reminder_minutes is not None:
+        event["reminders"] = {
+            "useDefault": False,
+            "overrides": [
+                {"method": reminder_method, "minutes": reminder_minutes}
+            ],
+        }
+
     try:
         event_result = service.events().insert(calendarId=calendar_id, body=event).execute()
         return ToolResponse(
@@ -121,8 +134,17 @@ async def create_event(
         )
 
     except Exception as e:
+        error_msg = str(e)
+        if "403" in error_msg or "Forbidden" in error_msg:
+            return ToolResponse(
+                content=[TextBlock(type="text", text=f"Access denied: You don't have permission to create events on this calendar. Check your calendar sharing settings.")],
+            )
+        elif "404" in error_msg or "Not Found" in error_msg:
+            return ToolResponse(
+                content=[TextBlock(type="text", text=f"Calendar not found: The calendar '{calendar_id}' does not exist or is not accessible.")],
+            )
         return ToolResponse(
-            content=[TextBlock(type="text", text=f"Error creating event: {str(e)}")],
+            content=[TextBlock(type="text", text=f"Error creating event: {error_msg}")],
         )
 
 
@@ -134,6 +156,8 @@ async def edit_event(
     description: str | None = None,
     location: str | None = None,
     calendar_id: str = "primary",
+    reminder_minutes: int | None = None,
+    reminder_method: str | None = None,
 ) -> ToolResponse:
     """Modify an existing Google Calendar event.
 
@@ -148,6 +172,8 @@ async def edit_event(
         description: New description for the event.
         location: New location for the event.
         calendar_id: Calendar ID containing the event. Defaults to "primary".
+        reminder_minutes: Minutes before event to send reminder (None keeps existing, 0 disables).
+        reminder_method: Reminder type - "popup" or "email" (None keeps existing).
     """
     service = _get_calendar_service()
     if service is None:
@@ -168,6 +194,18 @@ async def edit_event(
     if location is not None:
         event["location"] = location
 
+    # Handle reminders
+    if reminder_minutes is not None or reminder_method is not None:
+        event["reminders"] = {
+            "useDefault": False,
+            "overrides": [
+                {
+                    "method": reminder_method if reminder_method else "popup",
+                    "minutes": reminder_minutes if reminder_minutes is not None else 30
+                }
+            ],
+        }
+
     if not event:
         return ToolResponse(
             content=[TextBlock(type="text", text="No fields to update. Please provide at least one field.")],
@@ -184,8 +222,17 @@ async def edit_event(
         )
 
     except Exception as e:
+        error_msg = str(e)
+        if "403" in error_msg or "Forbidden" in error_msg:
+            return ToolResponse(
+                content=[TextBlock(type="text", text=f"Access denied: You don't have permission to modify events on this calendar. The event may have been created by someone else with owner-only access.")],
+            )
+        elif "404" in error_msg or "Not Found" in error_msg:
+            return ToolResponse(
+                content=[TextBlock(type="text", text=f"Event not found: No event with ID '{event_id}' exists on calendar '{calendar_id}'.")],
+            )
         return ToolResponse(
-            content=[TextBlock(type="text", text=f"Error editing event: {str(e)}")],
+            content=[TextBlock(type="text", text=f"Error editing event: {error_msg}")],
         )
 
 
@@ -209,8 +256,17 @@ async def delete_event(event_id: str, calendar_id: str = "primary") -> ToolRespo
         )
 
     except Exception as e:
+        error_msg = str(e)
+        if "403" in error_msg or "Forbidden" in error_msg:
+            return ToolResponse(
+                content=[TextBlock(type="text", text=f"Access denied: You don't have permission to delete events on this calendar.")],
+            )
+        elif "404" in error_msg or "Not Found" in error_msg:
+            return ToolResponse(
+                content=[TextBlock(type="text", text=f"Event not found: No event with ID '{event_id}' exists on calendar '{calendar_id}'.")],
+            )
         return ToolResponse(
-            content=[TextBlock(type="text", text=f"Error deleting event: {str(e)}")],
+            content=[TextBlock(type="text", text=f"Error deleting event: {error_msg}")],
         )
 
 
