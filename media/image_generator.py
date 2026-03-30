@@ -5,7 +5,7 @@ import base64
 import os
 
 import requests
-from agentscope.message import TextBlock
+from agentscope.message import ImageBlock, TextBlock
 from agentscope.tool import ToolResponse
 from PIL import Image
 
@@ -102,8 +102,15 @@ async def generate_image(
             with open(output_file, "wb") as f:
                 f.write(base64.b64decode(base64_image))
 
+            # Return as ImageBlock for proper display in UI
             return ToolResponse(
-                content=[TextBlock(type="text", text=f"Image generated successfully: {output_file}")],
+                content=[
+                    ImageBlock(
+                        type="image",
+                        source={"type": "url", "url": f"file://{output_file}"},
+                    ),
+                    TextBlock(type="text", text=f"Generated: {prompt}"),
+                ],
             )
         else:
             return ToolResponse(
