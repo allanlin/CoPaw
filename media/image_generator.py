@@ -102,12 +102,16 @@ async def generate_image(
             with open(output_file, "wb") as f:
                 f.write(base64.b64decode(base64_image))
 
-            # Return as ImageBlock for proper display in UI
+            # Return as ImageBlock with data URL for reliable display
+            with open(output_file, "rb") as f:
+                image_data = base64.b64encode(f.read()).decode("utf-8")
+            data_url = f"data:image/png;base64,{image_data}"
+
             return ToolResponse(
                 content=[
                     ImageBlock(
                         type="image",
-                        source={"type": "url", "url": f"file://{output_file}"},
+                        source={"type": "url", "url": data_url},
                     ),
                     TextBlock(type="text", text=f"Generated: {prompt}"),
                 ],
