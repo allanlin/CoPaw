@@ -79,11 +79,16 @@ async def send_file_to_user(
             file_data = base64.b64encode(f.read()).decode("utf-8")
 
         if as_type == "image":
+            # Return as FileBlock with data URL for download
             data_url = f"data:{mime_type};base64,{file_data}"
             return ToolResponse(
                 content=[
-                    ImageBlock(type="image", source={"type": "url", "url": data_url}),
-                    TextBlock(type="text", text="File sent successfully."),
+                    FileBlock(
+                        type="file",
+                        source={"type": "url", "url": data_url},
+                        filename=os.path.basename(file_path),
+                    ),
+                    TextBlock(type="text", text=f"Image: {os.path.basename(file_path)} ({os.path.getsize(file_path) // 1024}KB) - Click to download"),
                 ],
             )
         if as_type == "audio":
